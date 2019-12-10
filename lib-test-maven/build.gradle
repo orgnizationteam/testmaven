@@ -1,0 +1,30 @@
+apply plugin: 'java-library'
+apply plugin: 'maven'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
+
+group = "com.github.orgnizationteam"
+version = "1.1"
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            //提交到远程服务器：
+            repository(url: "$maven_url_release") {
+                Properties properties = new Properties()
+                InputStream inputStream = project.rootProject.file('local.properties').newDataInputStream() ;
+                properties.load( inputStream )
+                def maven_user = properties.getProperty( 'maven.user' )
+                def maven_pw = properties.getProperty( 'maven.pw' ) ;
+                authentication(userName: "$maven_user", password: "$maven_pw")
+            }
+            // 本地的Maven地址
+//             repository(url: uri("../repo"))
+        }
+    }
+}
