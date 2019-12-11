@@ -1,5 +1,6 @@
 apply plugin: 'java-library'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -8,23 +9,96 @@ dependencies {
 sourceCompatibility = "7"
 targetCompatibility = "7"
 
+configurations {
+    deployerJars
+}
+
+Properties properties = new Properties()
+InputStream inputStream = project.rootProject.file('local.properties').newDataInputStream();
+properties.load(inputStream)
+def maven_user = properties.getProperty('maven.user')
+def maven_pw = properties.getProperty('maven.pw')
+def signingKeyId = properties.getProperty('signing.keyId')
+def signingPassword = properties.getProperty('signing.password')
+def signingSecretKeyRingFile = properties.getProperty('signing.secretKeyRingFile')
+
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        allprojects {
+            ext."signing.keyId" = signingKeyId
+            ext."signing.secretKeyRingFile" = signingSecretKeyRingFile
+            ext."signing.password" = signingPassword
+        }
+    }
+}
+
+signing {
+    sign configurations.archives
+}
+
 group = "com.github.orgnizationteam"
-version = "1.1"
+archivesBaseName = "testmaven"
+version = lib_test_maven_version
 
 uploadArchives {
     repositories {
         mavenDeployer {
+            beforeDeployment {
+                MavenDeployment deployment -> signing.signPom(deployment)
+            }
+
+            pom.project {
+                name 'testmaven'
+                packaging 'jar'
+                description 'testmaven description'
+                url 'https://github.com/orgnizationteam/testmaven'
+
+                scm {
+                    connection 'scm:git:https://github.com/orgnizationteam/testmaven.git'
+                    developerConnection 'scm:git:https://github.com/orgnizationteam/testmaven.git'
+                    url 'https://github.com/orgnizationteam/testmaven.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'gzqreder'
+                        name 'gzqreder'
+                        email 'gzqreder@163.com'
+                    }
+                }
+            }
+
             //提交到远程服务器：
             repository(url: "$maven_url_release") {
-                Properties properties = new Properties()
-                InputStream inputStream = project.rootProject.file('local.properties').newDataInputStream() ;
-                properties.load( inputStream )
-                def maven_user = properties.getProperty( 'maven.user' )
-                def maven_pw = properties.getProperty( 'maven.pw' ) ;
                 authentication(userName: "$maven_user", password: "$maven_pw")
             }
+
             // 本地的Maven地址
 //             repository(url: uri("../repo"))
         }
     }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+//    archives jar
+    archives javadocJar
+    archives sourcesJar
 }

@@ -2,7 +2,10 @@
 
 buildscript {
     ext {
-        kotlin_version = '1.3.50'
+        kotlin_version = '1.3.61'
+
+        lib_test_maven_version = '1.7'
+
         maven_url_release = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
         maven_url_snapshot = 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
@@ -23,7 +26,7 @@ allprojects {
     repositories {
         google()
         jcenter()
-
+        mavenCentral()
     }
 }
 
