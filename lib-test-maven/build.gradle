@@ -1,6 +1,16 @@
 apply plugin: 'java-library'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9.2'
+    }
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -13,6 +23,11 @@ configurations {
     deployerJars
 }
 
+def siteUrl = 'https://github.com/orgnizationteam/testmaven'
+def gitUrl = 'https://github.com/orgnizationteam/testmaven.git'
+def licenseName = 'Apache-2.0'
+def licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+
 Properties properties = new Properties()
 InputStream inputStream = project.rootProject.file('local.properties').newDataInputStream();
 properties.load(inputStream)
@@ -21,7 +36,9 @@ def maven_pw = properties.getProperty('maven.pw')
 def signingKeyId = properties.getProperty('signing.keyId')
 def signingPassword = properties.getProperty('signing.password')
 def signingSecretKeyRingFile = properties.getProperty('signing.secretKeyRingFile')
-
+def bintrayUserName = properties.getProperty('bintray.user')
+def bintrayRepoName = properties.getProperty('bintray.repo')
+def bintrayApiKey = properties.getProperty('bintray.apikey')
 
 gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.allTasks.any { it instanceof Sign }) {
@@ -38,7 +55,7 @@ signing {
 }
 
 group = "com.github.orgnizationteam"
-archivesBaseName = "testmaven"
+archivesBaseName = "lib-test-maven"
 version = lib_test_maven_version
 
 uploadArchives {
@@ -52,18 +69,18 @@ uploadArchives {
                 name 'testmaven'
                 packaging 'jar'
                 description 'testmaven description'
-                url 'https://github.com/orgnizationteam/testmaven'
+                url siteUrl
 
                 scm {
-                    connection 'scm:git:https://github.com/orgnizationteam/testmaven.git'
-                    developerConnection 'scm:git:https://github.com/orgnizationteam/testmaven.git'
-                    url 'https://github.com/orgnizationteam/testmaven.git'
+                    connection "scm:git:$gitUrl"
+                    developerConnection "scm:git:$gitUrl"
+                    url siteUrl
                 }
 
                 licenses {
                     license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        name licenseName
+                        url licenseUrl
                     }
                 }
 
@@ -101,4 +118,18 @@ artifacts {
 //    archives jar
     archives javadocJar
     archives sourcesJar
+}
+
+publish {
+    userOrg = bintrayUserName //bintray注册的用户名
+    repoName = bintrayRepoName  //仓库名
+    groupId = group
+    artifactId = archivesBaseName
+    publishVersion = lib_test_maven_version
+    desc = 'test jcenter maven'
+    website = siteUrl
+    licences = ["$licenseName"]
+    bintrayUser = bintrayUserName
+    bintrayKey = bintrayApiKey
+    dryRun = false
 }
